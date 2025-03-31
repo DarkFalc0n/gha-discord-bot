@@ -1,11 +1,2 @@
-To install dependencies:
-```sh
-bun install
-```
-
-To run:
-```sh
-bun run dev
-```
-
-open http://localhost:3000
+## Github Actions Discord Integration (POC)
+A Proof-of-Concept built to integrate Github Actions with Discord.
