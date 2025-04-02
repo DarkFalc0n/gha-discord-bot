@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import PRRoute  from '@/routes/pr.route';
+import PRRoute from '@/routes/pr.route';
 import HealthRoute from '@/routes/health.route';
 
 const app = new Hono();

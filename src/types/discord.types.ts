@@ -7,12 +7,11 @@ export interface INewPullRequestMessageContent {
   repository: {
     name: string;
     owner: string;
-  }
+  };
   user: {
     id: number;
     url: string;
     username: string;
     avatar_url: string;
   };
-
 }

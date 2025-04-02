@@ -8,9 +8,7 @@ import { newPullRequestEmbedData } from '../constants/embedData';
 export class DiscordMessage {
   private constructor() {}
 
-  public static newPullRequestMessage(
-    messageContent: INewPullRequestMessageContent
-  ) {
+  public static newPullRequestMessage(messageContent: INewPullRequestMessageContent) {
     const messageEmbedVersion = uuid();
     return {
       embeds: [
@@ -22,8 +20,7 @@ export class DiscordMessage {
           },
           title: newPullRequestEmbedData.title,
           color: newPullRequestEmbedData.color,
-          description:
-            generateNewPullRequestEmbedDescription(),
+          description: generateNewPullRequestEmbedDescription(),
           url: messageContent.url,
           image: {
             url: `https://opengraph.githubassets.com/${messageEmbedVersion}/${messageContent.repository.owner}/${messageContent.repository.name}/pull/${messageContent.number}`,
@@ -33,9 +30,7 @@ export class DiscordMessage {
     } satisfies MessageCreateOptions;
   }
 
-  public static async reactToPullRequestMessage(
-    message: Message<true>
-  ) {
+  public static async reactToPullRequestMessage(message: Message<true>) {
     for (const reaction of newPullRequestReactions) {
       await message.react(reaction.emoji);
     }

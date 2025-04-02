@@ -1,6 +1,6 @@
-import { EmbedColors } from "./embedColors";
+import { EmbedColors } from './embedColors';
 
 export const newPullRequestEmbedData = {
-    title: 'Opened a pull request',
-    color: EmbedColors.PULL_REQUEST,
-}
+  title: 'Opened a pull request',
+  color: EmbedColors.PULL_REQUEST,
+};

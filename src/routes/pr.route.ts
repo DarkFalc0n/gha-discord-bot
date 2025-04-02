@@ -13,15 +13,9 @@ app.post('/', async (ctx) => {
   }
   if (body.action === 'opened') {
     try {
-      const channel =
-        await DiscordClient.client.channels.fetch(
-          config.DISCORD_MESSAGE_CHANNEL_ID
-        );
+      const channel = await DiscordClient.client.channels.fetch(config.DISCORD_MESSAGE_CHANNEL_ID);
       if (!channel?.isSendable()) {
-        return ctx.json(
-          'Channel is not a text channel',
-          400
-        );
+        return ctx.json('Channel is not a text channel', 400);
       }
       const message = await channel.send(
         DiscordMessage.newPullRequestMessage({
@@ -42,19 +36,11 @@ app.post('/', async (ctx) => {
           },
         })
       );
-      await DiscordMessage.reactToPullRequestMessage(
-        message as Message<true>
-      );
+      await DiscordMessage.reactToPullRequestMessage(message as Message<true>);
       return ctx.json('Message sent', 200);
     } catch (error) {
-      console.error(
-        'Error sending PR notification to Discord:',
-        error
-      );
-      return ctx.json(
-        { error: 'Failed to send message to Discord' },
-        500
-      );
+      console.error('Error sending PR notification to Discord:', error);
+      return ctx.json({ error: 'Failed to send message to Discord' }, 500);
     }
   }
 });
