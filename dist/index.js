@@ -58785,14 +58785,213 @@ var env = z.object({
   NODE_ENV: z.enum(["development", "production"]).default("development"),
   DISCORD_TOKEN: z.string({
     required_error: "A valid Discord Token is required"
+  }),
+  DISCORD_MESSAGE_CHANNEL_ID: z.coerce.string({
+    required_error: "A valid Discord ChannelID is required"
   })
 });
 var config = env.parse(process.env);
 
+// src/clients/discord/index.ts
+var import_discord2 = __toESM(require_src(), 1);
+
+// src/clients/discord/constants/intents.ts
+var import_discord = __toESM(require_src(), 1);
+var intents = [
+  import_discord.GatewayIntentBits.Guilds,
+  import_discord.GatewayIntentBits.GuildMessages,
+  import_discord.GatewayIntentBits.MessageContent
+];
+
+// src/clients/discord/index.ts
+class DiscordClient {
+  static _client = new import_discord2.Client({
+    intents
+  });
+  static _instance;
+  constructor() {
+  }
+  static get instance() {
+    if (!DiscordClient._instance) {
+      DiscordClient._instance = new DiscordClient;
+    }
+    return DiscordClient._instance;
+  }
+  static get client() {
+    return DiscordClient._client;
+  }
+  start() {
+    DiscordClient._client.login(config.DISCORD_TOKEN).catch((error) => {
+      console.error("Could not log into Discord application:", error);
+    });
+    DiscordClient._client.once("ready", () => {
+      console.log(`Logged in as ${DiscordClient._client.user?.tag}!`);
+    });
+    DiscordClient._client.on("messageCreate", (message) => {
+      if (message.author.bot)
+        return;
+      if (message.content === "!ping") {
+        message.channel.send("Pong!");
+      }
+    });
+  }
+}
+
+// src/clients/discord/constants/reactions.ts
+var newPullRequestReactions = [
+  {
+    tag: "Work in Progress",
+    emoji: "\uD83D\uDEA7"
+  },
+  {
+    tag: "Needs Review",
+    emoji: "\uD83D\uDC40"
+  },
+  {
+    tag: "Reviewed with Comments",
+    emoji: "\uD83D\uDCAC"
+  },
+  {
+    tag: "Good to Merge",
+    emoji: "\u2705"
+  }
+];
+
+// node_modules/uuid/dist/esm/stringify.js
+var byteToHex = [];
+for (let i = 0;i < 256; ++i) {
+  byteToHex.push((i + 256).toString(16).slice(1));
+}
+function unsafeStringify(arr, offset = 0) {
+  return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+}
+
+// node_modules/uuid/dist/esm/rng.js
+import { randomFillSync } from "crypto";
+var rnds8Pool = new Uint8Array(256);
+var poolPtr = rnds8Pool.length;
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    randomFillSync(rnds8Pool);
+    poolPtr = 0;
+  }
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+
+// node_modules/uuid/dist/esm/native.js
+import { randomUUID } from "crypto";
+var native_default = { randomUUID };
+
+// node_modules/uuid/dist/esm/v4.js
+function v4(options, buf, offset) {
+  if (native_default.randomUUID && !buf && !options) {
+    return native_default.randomUUID();
+  }
+  options = options || {};
+  const rnds = options.random ?? options.rng?.() ?? rng();
+  if (rnds.length < 16) {
+    throw new Error("Random bytes length must be >= 16");
+  }
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  if (buf) {
+    offset = offset || 0;
+    if (offset < 0 || offset + 16 > buf.length) {
+      throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+    }
+    for (let i = 0;i < 16; ++i) {
+      buf[offset + i] = rnds[i];
+    }
+    return buf;
+  }
+  return unsafeStringify(rnds);
+}
+var v4_default = v4;
+// src/clients/discord/utils/generateEmbedDescription.ts
+var generateNewPullRequestEmbedDescription = () => {
+  let desc = "**React to assign labels:**";
+  desc += "\n";
+  newPullRequestReactions.forEach((reaction) => {
+    desc += `${reaction.emoji} - ${reaction.tag}\n`;
+  });
+  return desc;
+};
+
+// src/clients/discord/constants/embedData.ts
+var newPullRequestEmbedData = {
+  title: "Opened a pull request",
+  color: 16219904 /* PULL_REQUEST */
+};
+
+// src/clients/discord/lib/discordMessage.ts
+class DiscordMessage {
+  constructor() {
+  }
+  static newPullRequestMessage(messageContent) {
+    const messageEmbedVersion = v4_default();
+    return {
+      embeds: [
+        {
+          author: {
+            name: messageContent.user.username,
+            icon_url: messageContent.user.avatar_url,
+            url: messageContent.user.url
+          },
+          title: newPullRequestEmbedData.title,
+          color: newPullRequestEmbedData.color,
+          description: generateNewPullRequestEmbedDescription(),
+          url: messageContent.url,
+          image: {
+            url: `https://opengraph.githubassets.com/${messageEmbedVersion}/${messageContent.repository.owner}/${messageContent.repository.name}/pull/${messageContent.number}`
+          }
+        }
+      ]
+    };
+  }
+  static async reactToPullRequestMessage(message) {
+    for (const reaction of newPullRequestReactions) {
+      await message.react(reaction.emoji);
+    }
+  }
+}
+
 // src/routes/pr.route.ts
 var app = new Hono2;
-app.post("/", (ctx) => {
-  return ctx.text("This is pr route");
+app.post("/", async (ctx) => {
+  const body = await ctx.req.json();
+  if (!body?.action) {
+    return ctx.json("Not a valid webhook call", 400);
+  }
+  if (body.action === "opened") {
+    try {
+      const channel = await DiscordClient.client.channels.fetch(config.DISCORD_MESSAGE_CHANNEL_ID);
+      if (!channel?.isSendable()) {
+        return ctx.json("Channel is not a text channel", 400);
+      }
+      const message = await channel.send(DiscordMessage.newPullRequestMessage({
+        description: body.pull_request.body,
+        id: body.pull_request.id,
+        title: body.pull_request.title,
+        number: body.pull_request.number,
+        url: body.pull_request.html_url,
+        repository: {
+          name: body.repository.name,
+          owner: body.repository.owner.login
+        },
+        user: {
+          avatar_url: body.pull_request.user.avatar_url,
+          url: body.pull_request.user.html_url,
+          id: body.pull_request.user.id,
+          username: body.pull_request.user.login
+        }
+      }));
+      await DiscordMessage.reactToPullRequestMessage(message);
+      return ctx.json("Message sent", 200);
+    } catch (error) {
+      console.error("Error sending PR notification to Discord:", error);
+      return ctx.json({ error: "Failed to send message to Discord" }, 500);
+    }
+  }
 });
 var pr_route_default = app;
 
@@ -58809,46 +59008,9 @@ app3.route("/", health_route_default);
 app3.route("/pr", pr_route_default);
 var routes_default = app3;
 
-// src/clients/discord/index.ts
-var import_discord2 = __toESM(require_src(), 1);
-
-// src/clients/discord/constants/intents.ts
-var import_discord = __toESM(require_src(), 1);
-var intents = [
-  import_discord.GatewayIntentBits.Guilds,
-  import_discord.GatewayIntentBits.GuildMessages,
-  import_discord.GatewayIntentBits.MessageContent
-];
-
-// src/clients/discord/index.ts
-class DiscordClient {
-  client;
-  constructor() {
-    this.client = new import_discord2.Client({
-      intents
-    });
-  }
-  start() {
-    this.client.login(config.DISCORD_TOKEN).catch((error) => {
-      console.error("Could not log into Discord application:", error);
-    });
-    this.client.once("ready", () => {
-      console.log(`Logged in as ${this.client.user?.tag}!`);
-    });
-    this.client.on("messageCreate", (message) => {
-      if (message.author.bot)
-        return;
-      if (message.content === "!ping") {
-        message.channel.send("Pong!");
-      }
-    });
-  }
-}
-
 // src/index.ts
 var app4 = new Hono2;
-var discordClient = new DiscordClient;
-discordClient.start();
+DiscordClient.instance.start();
 app4.route("/", routes_default);
 var src_default = {
   port: config.PORT,

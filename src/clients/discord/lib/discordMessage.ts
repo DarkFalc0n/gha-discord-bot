@@ -1,7 +1,7 @@
 import { INewPullRequestMessageContent } from '@/types/discord.types';
 import { Message, MessageCreateOptions } from 'discord.js';
 import { newPullRequestReactions } from '../constants/reactions';
-import { randomUUIDv7 } from 'bun';
+import { v4 as uuid } from 'uuid';
 import { generateNewPullRequestEmbedDescription } from '../utils/generateEmbedDescription';
 import { newPullRequestEmbedData } from '../constants/embedData';
 
@@ -11,7 +11,7 @@ export class DiscordMessage {
   public static newPullRequestMessage(
     messageContent: INewPullRequestMessageContent
   ) {
-    const messageEmbedVersion = randomUUIDv7();
+    const messageEmbedVersion = uuid();
     return {
       embeds: [
         {
