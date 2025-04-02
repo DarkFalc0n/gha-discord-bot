@@ -5,8 +5,7 @@ import { DiscordClient } from "@/clients/discord";
 
 const app = new Hono();
 
-const discordClient = new DiscordClient();
-discordClient.start();
+DiscordClient.instance.start();
 
 app.route("/", routes);
 

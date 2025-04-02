@@ -1,9 +1,9 @@
-import { Hono } from "hono";
+import { Hono } from 'hono';
 
 const app = new Hono();
 
-app.get("/", (ctx) => {
-  return ctx.text("Server health: OK!");
+app.get('/', (ctx) => {
+  return ctx.text('Server health: OK!');
 });
 
 export default app;
